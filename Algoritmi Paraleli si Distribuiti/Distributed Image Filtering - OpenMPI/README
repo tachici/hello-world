@@ -1,0 +1,52 @@
+//TACHICI ANDREI-ALEXANDRU 331CB Tema 3 APD
+
+clase:
+
+Root  - Root-ul are responsabilitatea de a citi imaginea din fisier
+		si de a o borda cu 0 -uri astfel incat atunci cand frunzele
+		aplica filtrul de 3*3 sa poata fi prelucrati si pixelii de la
+		marginile imaginii.
+	  - Citeste din fisier vecinii lui dupa care imparte linii copiilor
+	    care pot fi noduri Intermediary sau Leaf. Liniile sunt distribuite in mod
+	    egal mai putin ultimului fiu care ia (nr_linii / nr_copii + nr_linii % nr_copii) linii
+	    Dupa ce realizeaza aceasta impartire tine minte indici [start,end], pentru fiecare copil
+	    care a primit linii de procesat, unde start si end reprezinta intervalul indicilor liniilor
+	    din imaginea finala (fara cele doua linii de 0 folosite pentru bordare). Pentru trimiterea
+	    liniilor, copii asteapta un int height ce reprezinta numarul de linii asteptate si width ce
+	    reprezinta lungimea liniei.
+	    Dupa receptionarea dimensiunii segmentului de imagine (width, height) copii asteapta de
+	    la parinte liniile.
+	    Root-ul trimite cu MPI_Send (cate o linie o data) liniile.
+	  - Asteapta de la fiecare copil liniile procesate, le concateneaza si va scrie in noul fisier
+	    imaginea pgm cu filtrul aplicat.
+
+Intermediary - Intermediary este un nod care nu este nici Root nici Leaf. El actioneaza asemanator Root-ului
+			   doar ca nu va citi imaginea ci va primi un segment de imagine de Root sau de la alt Intermediary
+			   si va imparti acest segment de imagine in alte segmente de imagine mai mici. De fiecare daca
+			   cand va trimite un segment de imagine va trimite de asemenea si doua linii redundante astfel:
+			   daca unui copil ii trimite intervalul [start, end] el de fapt va trimite [start - 1, end + 1],
+			   pentru a putea prelucra si liniile de la extremitati.
+			-  Intermediary asteapta numarul de linii pe care il va primi si dimensiunea lor dupa care
+			   va receptiona cu MPI_Recv toate liniile de la parinte.
+			-  Primul mesaj receptionat va da rank-ul parintelui cunoscut de Intermediary, astfel va sti
+			   cui sa-i raspunda atunci cand trebuie sa trimita in sus in arbore linii prelucrate.
+			-  Dupa ce primeste liniile le va imparti in mai multe segmente asemenea root-ului si va retine
+			   intervalul pe care fiecare copil l-a primit.
+			-  Asteapta linii procesate de la copii ((numarul de linii trimise - 2) per copil) (nu primeste
+			   si liniile de bordare)
+		    -  Concateneaza rezultatele primite de la copii si va trimite parintelui lui toate liniile concatenate
+		    -  Daca tag-ul primului mesaj primit (cel de height) contine tag-ul de terminare atunci forwardeaza
+		       acest mesaj copiilor lui (in jos in arbore) si asteapta statisticile.
+		    -  Reuneste toate statisticile primite sub forma unui array de int-uri [rank, nr, rank nr] unde rank - rank-ul
+		       nodului si nr - numarul de linii procesate. Dupa reunirea statisticilor se adauga pe sine cu nr = 0 si trimite
+		       mai departe parintelui statisticile.
+
+Leaf - Asteapta numarul de linii si dimensiunea unei linii cu MPI_Recv cu MPI_ANY_TAG si MPI_ANY_SOURCE deoarece
+	   initial nu isi cunoaste parintele.
+	 - Asteapta linii pentru a le procesa.
+	 - Verifica tag-ul pentru a aplica filtrul cerut sobel sau mean_removal
+	 - Aplica filtrul respectiv pe fiecare pixel
+	 - Aduna numarul de linii procesate la numarul de linii procesate in total (pentru statistica)
+	 - Trimite noul segment de imagine modificat mai sus in arbore.
+	 - In cazul in care primeste tag de terminare trimite mai sus doar numarul de linii procesate
+	   impreuna cu rank-ul. 

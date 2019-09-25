@@ -1,0 +1,59 @@
+//Tachici Andrei-Alexandru 331CB TEMA 1 APD
+
+	Multiplayer snake.
+
+	Solutia mea consta in memorarea configuratiilor initiale
+a tuturor serpilor in vectori de coordonate ce vor avea
+urmatoarea semnificatie:
+v[0] - cap sarpe.
+v[1] - segment din sarpe.
+v[2] - segment din sarpe.
+.
+.
+v[l - 2] - segment sarpe.
+v[l - 1] - coada sarpe.
+Unde l semnifica lungimea sarpelui.
+	Aceasta configuratie este necesara pentru a evita imposibilitatea
+determinarii cozii sarpelui dupa mai multe rulari.
+	La un anumit pas este posibil sa ajungem la configuratii ale hartii
+de tipul:
+0 1 1 0
+0 1 1 0
+0 1 1 0
+0 0 0 0
+	Unde este imposibila determinarea cozii chiar daca stim coordonata
+capului.
+	In input am asumat ca nu exista astfel de ambiguitati asa ca
+parcurg sarpele dintr-un capat spre celalat memorand ordinea sa.
+	Deplasarea sarpelui se traduce printr-o shiftare la dreapta si
+inserarea noii coordonate pe pozitia v[0].
+	Pentru determinarea coliziunii la pasul k + 1 este necesara doar
+stergerea tuturor cozilor serpilor (adaugare 0 pe poz respectiva), deoarece
+un sarpe nu poate face coliziune cu coada unui sarpe intrucat acesta
+nu va sta pe loc.
+
+Timpi solutie:
+
+I. Determina coada sarpe + memorare segmente = O(dimMedieSarpe * NrSerpi)
+PARALEL: (Fiecare thread determina si memoreaza cate un sarpe)
+
+II.Pentru un numar n de runde:
+	Pentru fiecare sarpe:	//PARALEL: fiecare thread verifica cate un sarpe
+		Daca inainteaza pe pozitie libera:
+			Verifica daca nu mai inainteaza niciun alt sarpe pe acceasi pozitie:
+				Pentru fiecare
+Complexitate II = O(n * NrSerpi * NrSerpi)
+
+III. Refa harta in caz coliziune (refa cozile serpilor) = O(NrSerpi)
+
+Complexitate totala = O(n * NrSerpi * NrSerpi)
+
+Timpi in functie de numarul de thread-uri:
+Serial: 954s.
+2  :  550s.
+4  :  289s.
+6  :  196s.
+8  :  155s
+10 :  129s
+12 :  109s.
+
